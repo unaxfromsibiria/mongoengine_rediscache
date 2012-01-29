@@ -1,0 +1,122 @@
+Server and soft:
+OS: Debian 3.1.0-1-amd64 x86_64 GNU/Linux
+CPU: Intel(R) Core(TM)2 Duo T6600 2.20GHz
+mongodb: 2.0.0-2
+Python: 2.7.2+
+Django version: 1.4 alpha
+pymongo: 2.0.1-1
+mongoengine: 0.5.2
+redis-server: 2.4.2-1
+python-redis:  2.4.9-1
+Web-server: nginx 1.1.8-1 + uWSGI 0.9.8.3-debian(64bit)
+
+==Getting object==
+-1-
+Test with used cache:
+Count operations: 15000
+Time operations: 8.84495401382
+Test without cached:
+Count operations: 15000
+Time operations: 19.808797121
+-2-
+Test with used cache:
+Count operations: 15000
+Time operations: 3.99209499359
+Test without cached:
+Count operations: 15000
+Time operations: 18.7795460224
+-3-
+Test with used cache:
+Count operations: 15000
+Time operations: 2.54329681396
+Test without cached:
+Count operations: 15000
+Time operations: 17.7209279537
+
+==Select list==
+-1-
+Test with used cache:
+Count operations: 300
+Object count: 207195
+Time operations: 6.14473700523
+Average list length: 690
+Test without cached:
+Count operations: 300
+Object count: 199122
+Time operations: 27.7501080036
+Average list length: 663
+-2-
+Test with used cache:
+Count operations: 300
+Object count: 200271
+Time operations: 5.51485180855
+Average list length: 667
+Test without cached:
+Count operations: 300
+Object count: 198798
+Time operations: 27.8188531399
+Average list length: 662
+-3-
+Test with used cache:
+Count operations: 300
+Object count: 189700
+Time operations: 5.5311870575
+Average list length: 632
+Test without cached:
+Count operations: 300
+Object count: 180917
+Time operations: 25.7878158092
+Average list length: 603
+
+==Get reference object==
+-1-
+Test with used cache:
+Objects count: 30000
+Time operations: 12.0339980125
+Test without cached:
+Objects count: 30000
+Time operations: 28.2414021492
+-2-
+Test with used cache:
+Objects count: 30000
+Time operations: 7.19947600365
+Test without cached:
+Objects count: 30000
+Time operations: 28.7138521671
+-3-
+Test with used cache:
+Objects count: 30000
+Time operations: 5.26431107521
+Test without cached:
+Objects count: 30000
+Time operations: 27.9019629955
+
+==Get reference list==
+-1-
+Test with used cache:
+Count objects in reference list: 35383
+Time operations: 12.6457750797
+Average list length: 4
+Test without cached:
+Count objects in reference list: 35248
+Time operations: 28.0478198528
+Average list length: 4
+-2-
+Test with used cache:
+Count objects in reference list: 35005
+Time operations: 6.16148686409
+Average list length: 4
+Test without cached:
+Count objects in reference list: 35254
+Time operations: 27.6127989292
+Average list length: 4
+-3-
+Test with used cache:
+Count objects in reference list: 34964
+Time operations: 6.15631604195
+Average list length: 4
+Test without cached:
+Count objects in reference list: 34933
+Time operations: 25.8812391758
+Average list length: 4
+
