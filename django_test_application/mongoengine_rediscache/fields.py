@@ -6,7 +6,8 @@ Created on 12.01.2012
 
 from django.conf import settings
 from mongoengine.fields import ReferenceField, ListField
-from __init__ import cache, _queryset_list
+from __init__ import _queryset_list
+from __init__ import _internal_cache as cache
 from queryset import DEFAULT_TIMEOUT
 import pymongo.dbref
 
@@ -16,8 +17,12 @@ class ListFieldCached(ListField):
             return self
         
         scheme=settings.MONGOENGINE_REDISCACHE.get('scheme').get( instance.__class__.__name__ )
-        try:      changed = self.name in instance._changed_fields
-        except:   changed = False
+        changed=False
+        if instance.pk is None:
+            changed=True # this is new model
+        else:
+            try:    changed = self.name in instance._changed_fields # this model changed
+            except: pass
 
         if scheme is None or not( 'list_reference' in scheme.get('request')) or changed:
             return super(ListFieldCached, self).__get__(instance, owner)
