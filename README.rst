@@ -13,65 +13,65 @@ Dependencies
 Usage
 =====
 You can create models like this (for example look at models.py of application "tests")::
-from mongoengine import *
-from mongoengine_rediscache.fields import ReferenceFieldCached, ListFieldCached
-from mongoengine_rediscache.invalidation import CacheInvalidator
-from mongoengine_rediscache.queryset import CachedQuerySet
-from mongoengine_rediscache import install_signals
-
-class TestModelObj(Document, CacheInvalidator):
-    num  =  IntField(default=0)
-    name =  StringField(max_length=255, required=False )
-    text =  StringField(max_length=255, required=False )
-    create_date = DateTimeField()
-    
-    meta = { 'queryset_class': CachedQuerySet }
-
-class TestModelList(Document, CacheInvalidator):
-    num  =  IntField(default=0)
-    name =  StringField(max_length=255, required=False )
-    models = ListFieldCached( ReferenceField(TestModelObj) )
-    
-    meta = { 'queryset_class': CachedQuerySet }
-    
-class TestModelRef(Document, CacheInvalidator):
-    num  =  IntField(default=0)
-    name =  StringField(max_length=255, required=False )
-    model = ReferenceFieldCached(TestModelObj)
-    
-    meta = { 'queryset_class': CachedQuerySet }
-    
-install_signals('tests')
+	from mongoengine import *
+	from mongoengine_rediscache.fields import ReferenceFieldCached, ListFieldCached
+	from mongoengine_rediscache.invalidation import CacheInvalidator
+	from mongoengine_rediscache.queryset import CachedQuerySet
+	from mongoengine_rediscache import install_signals
+	
+	class TestModelObj(Document, CacheInvalidator):
+	    num  =  IntField(default=0)
+	    name =  StringField(max_length=255, required=False )
+	    text =  StringField(max_length=255, required=False )
+	    create_date = DateTimeField()
+	    
+	    meta = { 'queryset_class': CachedQuerySet }
+	
+	class TestModelList(Document, CacheInvalidator):
+	    num  =  IntField(default=0)
+	    name =  StringField(max_length=255, required=False )
+	    models = ListFieldCached( ReferenceField(TestModelObj) )
+	    
+	    meta = { 'queryset_class': CachedQuerySet }
+	    
+	class TestModelRef(Document, CacheInvalidator):
+	    num  =  IntField(default=0)
+	    name =  StringField(max_length=255, required=False )
+	    model = ReferenceFieldCached(TestModelObj)
+	    
+	    meta = { 'queryset_class': CachedQuerySet }
+	    
+	install_signals('tests')
 
 function install_signals(application name) need for update cache.
 
 Configuration
 =====
 And more, you must create option in settings::
-MONGOENGINE_REDISCACHE = {
-    'scheme' : {
-                'TestModelObj' : {
-                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
-                     'timeout' : 600
-                     },
-                'TestModelList' : {
-                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
-                     'timeout' : 600
-                     },
-                'TestModelRef' : {
-                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
-                     'timeout' : 600
-                     },
-                },
-    'redis' : {
-        'host': 'localhost',
-        'port': 6379,
-        #'db': 1, 
-        'socket_timeout': 3,
-    },
-    'used' : True,
-    'keyhashed' : True,
-}
+	MONGOENGINE_REDISCACHE = {
+	    'scheme' : {
+	                'TestModelObj' : {
+	                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
+	                     'timeout' : 600
+	                     },
+	                'TestModelList' : {
+	                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
+	                     'timeout' : 600
+	                     },
+	                'TestModelRef' : {
+	                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
+	                     'timeout' : 600
+	                     },
+	                },
+	    'redis' : {
+	        'host': 'localhost',
+	        'port': 6379,
+	        #'db': 1, 
+	        'socket_timeout': 3,
+	    },
+	    'used' : True,
+	    'keyhashed' : True,
+	}
 
 - `'count' - use cache for count() method of CachedQuerySet`
 - `'list' - use cache in CachedQuerySet, you just need to call property ".cache" after of all "filter" and "order_by"`
