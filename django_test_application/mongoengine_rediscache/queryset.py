@@ -59,7 +59,7 @@ class CachedQuerySet(QuerySet):
             if cached_list is None:
             # creating cache
                 cached_list=_queryset_list()
-                if self.count()>0:
+                if super(CachedQuerySet, self).count()>0:
                     for obj in self:
                         cached_list.append(obj)
                     try:
@@ -72,3 +72,21 @@ class CachedQuerySet(QuerySet):
             del cache_key
             return cached_list
         return self
+    
+    def count(self):
+        scheme=settings.MONGOENGINE_REDISCACHE.get('scheme').get( self._document.__name__ )
+        if 'count' in scheme.get('request'):
+            cache_key="%s:count:%s" % (self._document._get_collection_name(), self.core_cache_name )
+            n=cache.get(cache_key)
+            if n is None:
+                n=super(CachedQuerySet, self).count()
+                try:
+                    timeout= int(scheme.get('timeout'))
+                except:
+                    timeout= DEFAULT_TIMEOUT
+                cache.set( cache_key, n, timeout )
+                # add in journal
+                journal.add_count_record(cache_key, self._document._get_collection_name() , timeout)
+            del cache_key
+            return n
+        return super(CachedQuerySet, self).count()

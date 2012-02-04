@@ -105,6 +105,13 @@ class RedisCache(BaseCache):
             self.conn.setex(cache_key, pickled_data, timeout)
         else:
             self.conn.set(cache_key, pickled_data)
+    
+    def flushall(self):
+        if self.conn is None:
+            return False
+        try:    self.conn.flushdb()
+        except: return False
+        return True
 
 cache = RedisCache(redis_conn)
 _internal_cache = RedisCache(redis_conn)

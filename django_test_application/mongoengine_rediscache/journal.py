@@ -18,6 +18,17 @@ def add_find_record(cache_key, collection, timeout ):
     journal_list.append(cache_key)
     cache.set(journal_name,journal_list,timeout)
 
+def add_count_record(cache_key, collection, timeout ):
+    try:
+        journal_name="%s:list:journal:" % collection
+    except:
+        return
+    journal_list=cache.get(journal_name)
+    if journal_list is None:
+        journal_list=[]
+    journal_list.append(cache_key)
+    cache.set(journal_name,journal_list,timeout)
+
 def add_get_record(pk, cache_key, collection, timeout):
     try:
         journal_name="%s:get:journal:pk=%s" % (collection, str(pk))

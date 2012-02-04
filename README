@@ -36,15 +36,15 @@ And more, you must create option in settings:
 MONGOENGINE_REDISCACHE = {
     'scheme' : {
                 'TestModelObj' : {
-                     'request' : [ 'list', 'reference', 'get', 'list_reference' ],
+                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
                      'timeout' : 600
                      },
                 'TestModelList' : {
-                     'request' : [ 'list', 'reference', 'get', 'list_reference' ],
+                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
                      'timeout' : 600
                      },
                 'TestModelRef' : {
-                     'request' : [ 'list', 'reference', 'get', 'list_reference' ],
+                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
                      'timeout' : 600
                      },
                 },
