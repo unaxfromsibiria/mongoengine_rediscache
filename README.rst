@@ -13,6 +13,7 @@ Dependencies
 Usage
 =====
 You can create models like this (for example look at models.py of application "tests")::
+
 	from mongoengine import *
 	from mongoengine_rediscache.fields import ReferenceFieldCached, ListFieldCached
 	from mongoengine_rediscache.invalidation import CacheInvalidator
@@ -43,11 +44,13 @@ You can create models like this (for example look at models.py of application "t
 	    
 	install_signals('tests')
 
+
 function install_signals(application name) need for update cache.
 
 Configuration
 =====
 And more, you must create option in settings::
+
 	MONGOENGINE_REDISCACHE = {
 	    'scheme' : {
 	                'TestModelObj' : {
