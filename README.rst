@@ -1,5 +1,8 @@
 About
 ==========
+:Info: Redis cached tools for caching MongoEngine ORM models
+:Author: Michael
+
 mongoengine_rediscache allows you use cache on model level,
 he can to monitor the relevance of the cache when the model changes (save, update, delete)
 
@@ -8,7 +11,7 @@ Dependencies
 - pymongo
 - mongoengine
 - python-redis
-
+- `blinker <http://pypi.python.org/pypi/blinker#downloads>`_
 
 Usage
 =====
