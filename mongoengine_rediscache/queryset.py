@@ -19,7 +19,7 @@ class CachedQuerySet(QuerySet):
         scheme=settings.MONGOENGINE_REDISCACHE.get('scheme').get( self._document.__name__ )
         document=None
         if scheme and 'get' in scheme.get('request'):
-            core_cache_name=CacheNameMixer(query).line
+            core_cache_name=str(CacheNameMixer(query))
             cache_key="%s:get:%s" % ( self._document._get_collection_name() , core_cache_name)
             document=cache.get(cache_key)
             if document is None:
