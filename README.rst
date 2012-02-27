@@ -56,23 +56,15 @@ And more, you must create option in settings::
 
 	MONGOENGINE_REDISCACHE = {
 	    'scheme' : {
-	                'TestModelObj' : {
-	                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
-	                     'timeout' : 600
-	                     },
-	                'TestModelList' : {
-	                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
-	                     'timeout' : 600
-	                     },
-	                'TestModelRef' : {
-	                     'request' : [ 'count', 'list', 'reference', 'get', 'list_reference' ],
-	                     'timeout' : 600
-	                     },
+                	'TestModelObj'  : { 'list' : 120, 'reference' : 600, 'get' : 600 },
+                	'TestModelList' : { 'all' : 600 },
+                	'TestModelRef'  : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
+                	'TestModelDict' : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
 	                },
 	    'redis' : {
 	        'host': 'localhost',
 	        'port': 6379,
-	        #'db': 1, 
+	        'db': 1, 
 	        'socket_timeout': 3,
 	    },
 	    'used' : True,

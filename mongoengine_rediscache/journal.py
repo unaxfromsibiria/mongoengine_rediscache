@@ -20,7 +20,7 @@ def add_find_record(cache_key, collection, timeout ):
 
 def add_count_record(cache_key, collection, timeout ):
     try:
-        journal_name="%s:list:journal:" % collection
+        journal_name="%s:count:journal:" % collection
     except:
         return
     journal_list=cache.get(journal_name)

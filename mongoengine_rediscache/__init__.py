@@ -6,11 +6,22 @@ from functools import wraps
 from django.utils.hashcompat import md5_constructor
 import os, time
 import redis
+DEFAULT_TIMEOUT=600
 
 try:
     redis_conf = settings.MONGOENGINE_REDISCACHE.get('redis')
 except AttributeError:
     raise ImproperlyConfigured('Check MONGOENGINE_REDISCACHE in settings. ')
+
+def scheme_timelimit(model_name, request):
+    scheme=settings.MONGOENGINE_REDISCACHE.get('scheme').get(model_name)
+    if scheme is None:
+        return None
+    timeout=scheme.get(request)
+    if timeout is None:
+        timeout=scheme.get('all')
+    del scheme
+    return timeout
 
 try:    redis_conn = redis.Redis(**redis_conf)
 except: redis_conn = None
@@ -26,13 +37,7 @@ class _queryset_list(list):
         return len(self)
 
 class BaseCache(object):
-    """
-    Simple cache with time-based invalidation
-    """
     def cached(self, extra=None, timeout=None):
-        """
-        A decorator for caching function calls
-        """
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
