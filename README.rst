@@ -47,7 +47,7 @@ You can create models like this (for example look at models.py of application "t
 	    
 	install_signals('tests')
 
-Possible you can achieve greater efficiency if turn off cascade save for models with ReferenceField:
+Possible you can achieve greater efficiency if turn off cascade save for models with ReferenceField::
 
 	class TestModelRef(Document, CacheInvalidator):
 	    num  =  IntField(default=0)
