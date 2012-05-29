@@ -6,7 +6,8 @@ Created on 12.01.2012
 from mongoengine.fields import ReferenceField, ListField
 from __init__ import _queryset_list, scheme_timelimit
 from __init__ import _internal_cache as cache
-import pymongo.dbref
+from bson.dbref import DBRef
+# for old version: from pymongo.dbref import DBRef
 
 class ListFieldCached(ListField):
     def __get__(self, instance, owner):
@@ -30,7 +31,7 @@ class ListFieldCached(ListField):
             keys=[]
             list_reference=True
             for dbref_obj in DBRef_list:
-                if not isinstance(dbref_obj, (pymongo.dbref.DBRef)):
+                if not isinstance(dbref_obj, DBRef):
                     list_reference = False
                     break                    
                 keys.append('%s:get:pk=%s' % (dbref_obj.collection , dbref_obj.id ))
@@ -52,7 +53,7 @@ class ReferenceFieldCached(ReferenceField):
         if instance is None:
             return self
         value = instance._data.get(self.name)
-        if isinstance(value, (pymongo.dbref.DBRef)):
+        if isinstance(value, (DBRef)):
             timeout=scheme_timelimit(instance.__class__.__name__ , 'reference')
             if isinstance(timeout,int):
                 collection = value.collection

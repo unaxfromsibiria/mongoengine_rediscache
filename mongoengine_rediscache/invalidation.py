@@ -13,6 +13,7 @@ def model_change(pk, collection):
     cache.pipeline_delete(records('get',collection,'pk=%s' % str(pk) ))
     cache.delete("%s:get:journal:pk=%s" % (collection, str(pk)))
     cache.delete("%s:list:journal:" % collection )
+    cache.delete("%s:count:journal:" % collection )
 
 class CacheInvalidator:
     @classmethod

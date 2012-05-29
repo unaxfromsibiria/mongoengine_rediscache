@@ -8,7 +8,9 @@ from mongoengine import Document
 from mongoengine.queryset import QuerySet
 from datetime import datetime
 import hashlib
-from pymongo.dbref import DBRef
+from bson.dbref import DBRef
+# for old version: from pymongo.dbref import DBRef
+
 from django.conf import settings
 from re import _pattern_type
 
@@ -61,7 +63,7 @@ class CacheNameMixer(object):
         elif isinstance(query_obj, dict):
             return self.__parse(query_obj)
         elif isinstance(query_obj, DBRef):
-            return "%s.id=%s" % ( query_obj.id, query_obj.collection )
+            return "%s.id=%s" % ( query_obj.collection, query_obj.id )
         elif isinstance(query_obj, tuple):
             return "(%s)" % (",".join( [ self.__create_str(obj) for obj in query_obj ] ))          
         elif isinstance(query_obj, list) or isinstance(query_obj, QuerySet):

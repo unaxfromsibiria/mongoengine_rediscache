@@ -4,7 +4,6 @@ Created on 12.01.2012
 
 @author: unax
 '''
-
 from __init__ import _internal_cache as cache
 
 def add_find_record(cache_key, collection, timeout ):
@@ -42,6 +41,9 @@ def add_get_record(pk, cache_key, collection, timeout):
 
 def records(query_type, collection, clarify=''):
     try:
-        return cache.get( "%s:%s:journal:%s" % (collection, query_type,clarify) )
+        record_list=cache.get("%s:%s:journal:%s" % (collection, query_type, clarify))
     except:
-        return None
+        record_list=None
+    if query_type == 'get' and isinstance(record_list,list) and clarify!='':
+        record_list.append('%s:get:%s' % (collection,clarify) )
+    return record_list

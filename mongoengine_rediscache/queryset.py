@@ -3,7 +3,7 @@
 Created on 11.01.2012
 @author: unax
 '''
-from mongoengine.queryset import QuerySet, QCombination
+from mongoengine.queryset import QuerySet
 from misc import CacheNameMixer
 from __init__ import _queryset_list, scheme_timelimit
 from __init__ import _internal_cache as cache
@@ -14,10 +14,7 @@ import journal
 class CachedQuerySet(QuerySet):
     @property
     def core_cache_name(self):
-        if isinstance(self._query_obj, QCombination):
-            name=CacheNameMixer(self._mongo_query)
-        else:
-            name=CacheNameMixer(self._query_obj.query)
+        name=CacheNameMixer(self._query)
         if not name.exist:
             name.append(('all',))
         if self._skip:
