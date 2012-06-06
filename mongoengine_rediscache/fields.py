@@ -43,7 +43,8 @@ class ListFieldCached(ListField):
                     if models and len(models)>0:
                         instance._data[self.name]=_queryset_list()
                         for obj in models:
-                            cache.set( '%s:get:pk=%s' % (obj._get_collection_name(), obj.pk), obj, timeout)
+                            if not isinstance(obj, DBRef):
+                                cache.set( '%s:get:pk=%s' % (obj._get_collection_name(), obj.pk), obj, timeout)
                             instance._data[self.name].append(obj)
                 return models
         return super(ListFieldCached, self).__get__(instance, owner)

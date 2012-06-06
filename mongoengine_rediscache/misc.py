@@ -49,7 +49,7 @@ class CacheNameMixer(object):
 
     def __create_str(self, query_obj ):
         if isinstance(query_obj, unicode) or isinstance(query_obj, str):
-            return query_obj.encode('utf8')
+            return unicode(query_obj)
         elif isinstance(query_obj, int):
             return str(query_obj)
         elif isinstance(query_obj, float):
@@ -78,11 +78,11 @@ class CacheNameMixer(object):
     def __parse(self, query_dict ): # query_dict is dict, list or tuple
         if isinstance(query_dict,dict) and query_dict.keys()>0:
             query_line=[]
-            for key in query_dict:
-                query_line.append('%s=%s' % (key, self.__create_str(query_dict.get(key))) )
-            return "|".join(query_line)
+            for key in query_dict:                
+                query_line.append( u'%s=%s' % (key, self.__create_str(query_dict.get(key))) )
+            return (u"|".join(query_line)).encode('utf8')
         elif isinstance(query_dict,tuple) or isinstance(query_dict,list):
-            return "(%s)" % ( ",".join( [ self.__create_str(key) for key in query_dict ] ) )
+            return (u"(%s)" % ( u",".join( [ self.__create_str(key) for key in query_dict ] ) )).encode('utf8')
         return None
 
     def append(self, query_dict ):
