@@ -52,10 +52,10 @@ Possible you can achieve greater efficiency if turn off cascade save for models 
 	    model = ReferenceFieldCached(TestModelObj)
 	    
 	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
+	    
+	    
+Make sure the 'mongoengine_rediscache' after a 'you_application' in INSTALLED_APPS (all your applications)::
 
-
- Make sure the 'mongoengine_rediscache' after a 'you_application' in INSTALLED_APPS (all your applications)::
- 
 	INSTALLED_APPS = (
 	    'django.contrib.auth',
 	    'django.contrib.contenttypes',
