@@ -93,8 +93,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'mongoengine_rediscache',
     'tests',
+    'mongoengine_rediscache',
 )
 
 LOGGING = {
@@ -127,9 +127,9 @@ CACHE_USE=True
 
 MONGOENGINE_REDISCACHE = {
     'scheme' : {
-                'TestModelObj'  : { 'all' : 600 },
-                'TestModelList' : { 'all' : 600 },
-                'TestModelRef'  : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
+                'tests.models.TestModelObj'  : { 'all' : 600 },
+                'tests.models.TestModelList' : { 'all' : 600 },
+                'tests.models.TestModelRef'  : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
                 },
     'redis' : {
         'host': 'localhost',

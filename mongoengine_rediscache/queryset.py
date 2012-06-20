@@ -5,8 +5,9 @@ Created on 11.01.2012
 '''
 from mongoengine.queryset import QuerySet
 from misc import CacheNameMixer
-from __init__ import _queryset_list, scheme_timelimit
-from __init__ import _internal_cache as cache
+from helper import _queryset_list
+from config import scheme_timelimit
+from base_cache import _internal_cache as cache
 import journal
 
 #================ for mongoengine ====================

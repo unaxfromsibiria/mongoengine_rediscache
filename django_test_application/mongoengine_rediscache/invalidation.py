@@ -5,7 +5,7 @@ Created on 13.01.2012
 '''
 
 from journal import records
-from __init__ import _internal_cache as cache
+from base_cache import _internal_cache as cache
 
 def model_change(pk, collection):
     cache.pipeline_delete(records('list', collection))

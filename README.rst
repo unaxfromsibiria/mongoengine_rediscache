@@ -19,11 +19,9 @@ You can create models like this (for example look at models.py of application "t
 
 	from mongoengine import *
 	from mongoengine_rediscache.fields import ReferenceFieldCached, ListFieldCached
-	from mongoengine_rediscache.invalidation import CacheInvalidator
 	from mongoengine_rediscache.queryset import CachedQuerySet
-	from mongoengine_rediscache import install_signals
 	
-	class TestModelObj(Document, CacheInvalidator):
+	class TestModelObj(Document):
 	    num  =  IntField(default=0)
 	    name =  StringField(max_length=255, required=False )
 	    text =  StringField(max_length=255, required=False )
@@ -31,25 +29,24 @@ You can create models like this (for example look at models.py of application "t
 	    
 	    meta = { 'queryset_class': CachedQuerySet }
 	
-	class TestModelList(Document, CacheInvalidator):
+	class TestModelList(Document):
 	    num  =  IntField(default=0)
 	    name =  StringField(max_length=255, required=False )
 	    models = ListFieldCached( ReferenceField(TestModelObj) )
 	    
 	    meta = { 'queryset_class': CachedQuerySet }
 	    
-	class TestModelRef(Document, CacheInvalidator):
+	class TestModelRef(Document):
 	    num  =  IntField(default=0)
 	    name =  StringField(max_length=255, required=False )
 	    model = ReferenceFieldCached(TestModelObj)
 	    
 	    meta = { 'queryset_class': CachedQuerySet }
-	    
-	install_signals('tests')
-
+	   
+	   
 Possible you can achieve greater efficiency if turn off cascade save for models with ReferenceField::
 
-	class TestModelRef(Document, CacheInvalidator):
+	class TestModelRef(Document):
 	    num  =  IntField(default=0)
 	    name =  StringField(max_length=255, required=False )
 	    model = ReferenceFieldCached(TestModelObj)
@@ -57,7 +54,23 @@ Possible you can achieve greater efficiency if turn off cascade save for models 
 	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
 
 
-function install_signals(application name) need for update cache.
+ Make sure the 'mongoengine_rediscache' after a 'you_application' in INSTALLED_APPS (all your applications)::
+ 
+	INSTALLED_APPS = (
+	    'django.contrib.auth',
+	    'django.contrib.contenttypes',
+	    'django.contrib.sessions',
+	    'django.contrib.sites',
+	    'django.contrib.messages',
+	    'django.contrib.sitemaps',
+	    'django.contrib.staticfiles',
+	    'django.contrib.admin',
+	    'packeris',
+	    'tests',
+	    'mongoengine_rediscache',
+	    'cronis',
+	)
+
 
 Configuration
 =====
@@ -65,10 +78,10 @@ And more, you must create option in settings::
 
 	MONGOENGINE_REDISCACHE = {
 	    'scheme' : {
-                	'TestModelObj'  : { 'list' : 120, 'reference' : 600, 'get' : 600 },
-                	'TestModelList' : { 'all' : 600 },
-                	'TestModelRef'  : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
-                	'TestModelDict' : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
+                	'tests.models.TestModelObj'  : { 'list' : 120, 'reference' : 600, 'get' : 600 },
+                	'tests.models.TestModelList' : { 'all' : 600 },
+                	'tests.models.TestModelRef'  : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
+                	'tests.models.TestModelDict' : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
 	                },
 	    'redis' : {
 	        'host': 'localhost',
@@ -86,7 +99,6 @@ And more, you must create option in settings::
 - `'get' - use cache in CachedQuerySet for all get request`
 - `'list_reference' - use cache for ListFieldCached( ReferenceField(Document) )`
 I think this all clear..
-Append 'mongoengine_rediscache' in INSTALLED_APPS
 
 MONGOENGINE_REDISCACHE contain option 'keyhashed' needed for hashed cahce keys.
 
