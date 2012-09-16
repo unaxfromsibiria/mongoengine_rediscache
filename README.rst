@@ -4,7 +4,8 @@ About
 :Author: Michael
 
 mongoengine_rediscache allows you use cache on model level,
-he can to monitor the relevance of the cache when the model changes (save, update, delete)
+he can to monitor the relevance of the cache when the model changes (save, update, delete).
+Designed for use with or without Django.
 
 Dependencies
 ============
@@ -98,7 +99,60 @@ And more, you must create option in settings::
 - `'reference' - use cache in ReferenceFieldCached`
 - `'get' - use cache in CachedQuerySet for all get request`
 - `'list_reference' - use cache for ListFieldCached( ReferenceField(Document) )`
-I think this all clear..
+
+Posible to use without Django, you'll have such code::
+
+	from mongoengine import *
+	from mongoengine import CASCADE as REF_CASCADE
+	from mongoengine import PULL as REF_PULL
+	from datetime import datetime
+	
+	from mongoengine_rediscache.config import LazySettings
+	from mongoengine_rediscache import install_signals
+	from mongoengine_rediscache.queryset import CachedQuerySet
+	
+	LazySettings.options = {
+	    'scheme' : {
+	                'models.Model1' : { 'all' : 600 },
+	                'models.Model2' : { 'all' : 600 },
+	                'models.Model3' : { 'all' : 600 },
+	                },
+	    'redis' : {
+	        'host': 'localhost',
+	        'port': 6379,
+	        'db'  : 2,
+	        'socket_timeout': 5,
+	    },
+	    'used'      : True,
+	    'keyhashed' : True,
+	}
+	
+	class Model1(Document):
+	    name = StringField(max_length=32)
+	    volume = IntField()
+	    created = DateTimeField(default=datetime.now)
+	    
+	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
+	
+	class Model2(Document):
+	    name = StringField(max_length=32)
+	    count = IntField()
+	    created = DateTimeField(default=datetime.now)
+	    model1 = ReferenceField(Model1, reverse_delete_rule=REF_CASCADE, dbref=False)
+	    
+	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
+	
+	class Model3(Document):
+	    name = StringField(max_length=32)
+	    count = IntField()
+	    created = DateTimeField(default=datetime.now)
+	    model1 = ListField(ReferenceField(Model1, reverse_delete_rule=REF_CASCADE, dbref=False), required=True)
+	    
+	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
+	
+	install_signals()
+
+I think this all simple..
 
 MONGOENGINE_REDISCACHE contain option 'keyhashed' needed for hashed cahce keys.
 

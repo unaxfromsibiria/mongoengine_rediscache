@@ -1,23 +1,25 @@
-from base_cache import RedisCache
-from django.conf import settings
-from invalidation import CacheInvalidator
 
 def install_signals():
+    from invalidation import CacheInvalidator
+    from config import LazySettings
     from mongoengine import signals
-    for model_location in settings.MONGOENGINE_REDISCACHE.get('scheme'):
-        location=model_location.split('.')
-        try:
-            if len(location) == 2:
-                exec('from %s import %s' % (location[0],location[1]))
-            else: # must be 3
-                exec('from %s.%s import %s' % (location[0],location[1],location[2]))
-        except:
-            raise Exception("Can't import document %s from MONGOENGINE_REDISCACHE" % model_location)
+    
+    settings = LazySettings()
+    
+    if settings.content:
+        for model_location in settings.scheme:
+            location = model_location.split('.')
+            model = None
+            try:
+                if len(location) == 2:
+                    exec('from %s import %s as model' % (location[0], location[1]))
+                else: # must be 3
+                    exec('from %s.%s import %s as model' % (location[0], location[1], location[2]))
+            except:
+                raise Exception("Can't import document %s from MONGOENGINE_REDISCACHE" % model_location)
+    
+            signals.post_save.connect(CacheInvalidator.post_save, sender=model)
+            signals.post_delete.connect(CacheInvalidator.post_delete, sender=model)
 
-        try:
-            exec("signals.post_save.connect(CacheInvalidator.post_save, sender={0})".format(location[-1]) )
-            exec("signals.post_delete.connect(CacheInvalidator.post_delete, sender={0})".format(location[-1]) )
-        except:
-            pass
-
-install_signals()
+# uncomment for use as Django applications
+#install_signals()

@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
+from config import LazySettings
 import cPickle as pickle
 from functools import wraps
-from django.utils.hashcompat import md5_constructor
+from hashlib import md5 as md5_constructor
 import redis
 
-DEFAULT_TIMEOUT=600
+DEFAULT_TIMEOUT = 600
 
 class BaseCache(object):
     def cached(self, extra=None, timeout=None):
@@ -43,33 +42,33 @@ class RedisCache(BaseCache):
             return None
         return pickle.loads(data)
     
-    def pipeline_get(self, cache_key_list ):
-        if isinstance(cache_key_list,list) and len(cache_key_list)>0:
+    def pipeline_get(self, cache_key_list):
+        if isinstance(cache_key_list, list) and len(cache_key_list) > 0:
             pipe = self.conn.pipeline()
             for key in cache_key_list:
                 pipe.get(key)
-            data=pipe.execute()
-            if data is not None and len(data)>0:
-                res=[]
+            data = pipe.execute()
+            if data is not None and len(data) > 0:
+                res = []
                 for d in data:
-                    try: obj=pickle.loads(d)
-                    except: obj=None
+                    try: obj = pickle.loads(d)
+                    except: obj = None
                     if obj is not None:
                         res.append(obj)
                 return res
         return None
     
-    def pipeline_delete(self, cache_key_list ):
-        if isinstance(cache_key_list,list) and len(cache_key_list)>0:
+    def pipeline_delete(self, cache_key_list):
+        if isinstance(cache_key_list, list) and len(cache_key_list) > 0:
             pipe = self.conn.pipeline()
             for key in cache_key_list:
                 pipe.delete(key)
-            data=pipe.execute()
-            if data is not None and len(data)>0:
+            data = pipe.execute()
+            if data is not None and len(data) > 0:
                 return data
         return None
     
-    def delete(self, cache_key ):
+    def delete(self, cache_key):
         return self.conn.delete(cache_key)
 
     def set(self, cache_key, data, timeout=DEFAULT_TIMEOUT):
@@ -94,12 +93,58 @@ class RedisCache(BaseCache):
     def get_all_list(self, list_cache_key):
         return  self.conn.lrange(list_cache_key, 0, -1)
 
-try:
-    redis_conf = settings.MONGOENGINE_REDISCACHE.get('redis')
-except AttributeError:
-    raise ImproperlyConfigured('Check MONGOENGINE_REDISCACHE in settings. ')
+class LazyCache(RedisCache):
+    __this = None
+    
+    def __new__(cls):
+        if cls.__this is None:
+            cls.__this = super(LazyCache, cls).__new__(cls)
+        return cls.__this
 
-try:    redis_conn = redis.Redis(**redis_conf)
-except: redis_conn = None
+    def __init__(self):
+        pass
 
-_internal_cache = RedisCache(redis_conn)
+    def iazy_init(self):
+        try:
+            redis_conf = LazySettings().content.get('redis')
+        except AttributeError:
+            raise Exception('Check MONGOENGINE_REDISCACHE in settings. ')
+        try:
+            redis_conn = redis.Redis(**redis_conf)
+        except:
+            redis_conn = None
+        self.__class__.__this = RedisCache(redis_conn)
+
+    def get(self, cache_key):
+        self.iazy_init()
+        return self.__this.get(cache_key)
+    
+    def pipeline_get(self, cache_key_list):
+        self.iazy_init()
+        return self.__this.pipeline_get(cache_key_list)
+    
+    def pipeline_delete(self, cache_key_list):
+        self.iazy_init()
+        return self.__this.pipeline_delete(cache_key_list)
+    
+    def delete(self, cache_key):
+        self.iazy_init()
+        return self.__this.delete(cache_key)
+    
+    def append_to_list(self, list_cache_key, data):
+        self.iazy_init()
+        self.__this.append_to_list(list_cache_key, data)
+    
+    def set(self, cache_key, data, timeout=DEFAULT_TIMEOUT):
+        self.iazy_init()
+        return self.__this.set(cache_key, data, timeout=timeout)
+    
+    def flushall(self):
+        self.iazy_init()
+        return self.__this.flushall(self)
+    
+    def get_all_list(self, list_cache_key):
+        self.iazy_init()
+        return self.__this.get_all_list(list_cache_key)
+
+_internal_cache = LazyCache()
