@@ -16,28 +16,28 @@ from re import _pattern_type
 
 class CacheNameMixer(object):
     __line = None
-    
+
     def __init__(self, query_dict=None):
         self.__line = self.__parse(query_dict)
-    
+
     def __str__(self):
-        if getattr(LazySettings().content, 'keyhashed', False):
+        if LazySettings().keyhashed:
             return self.hash
         return self.__line
-    
+
     def __unicode__(self):
-        return u"%s" % self.__line
-    
+        return unicode(self.__line)
+
     @property
     def hash(self):
         md5 = hashlib.md5()
         md5.update(self.__line)
         return md5.hexdigest()
-    
+
     @property
     def line(self):
         return str(self)
-    
+
     @property
     def exist(self):
         return self.__line is not None and len(self.__line) > 0

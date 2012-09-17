@@ -24,6 +24,7 @@ class LazySettings(object):
     __settings = None
     __scheme = None
     __simple_scheme = None
+    __keyhashed = None
 
     def __new__(cls):
         if cls.__this is None:
@@ -42,8 +43,9 @@ class LazySettings(object):
                 return False
 
         if conf:
-            self.__class__.__settings = conf
-            self.__class__.__scheme = conf.get('scheme')
+            self.__class__.__settings  = conf
+            self.__class__.__scheme    = conf.get('scheme')
+            self.__class__.__keyhashed = conf.get('keyhashed')
             simple_scheme = {}
             for model_location in conf.get('scheme'):
                 simple_scheme[model_location.split('.')[-1]] = conf['scheme'][model_location]
@@ -70,6 +72,10 @@ class LazySettings(object):
     @property
     def scheme(self):
         return self.__scheme
+
+    @property
+    def keyhashed(self):
+        return self.__keyhashed
 
     @property
     def simple_scheme(self):
