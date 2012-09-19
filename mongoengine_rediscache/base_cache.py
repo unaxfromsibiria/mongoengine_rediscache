@@ -93,58 +93,56 @@ class RedisCache(BaseCache):
     def get_all_list(self, list_cache_key):
         return  self.conn.lrange(list_cache_key, 0, -1)
 
-class LazyCache(RedisCache):
+class LazyCache(object):
     __this = None
-    
+    __cahe = None
+
     def __new__(cls):
+        if not isinstance(cls.__cahe, RedisCache):
+            # try connect
+            try:     redis_conn = redis.Redis(**(LazySettings().content.get('redis')) )
+            except:  redis_conn = None
+            if redis_conn:
+                # replace functional
+                cls.__cahe          = RedisCache(redis_conn)
+                cls.get             = cls.__cahe.get
+                cls.pipeline_get    = cls.__cahe.pipeline_get
+                cls.pipeline_delete = cls.__cahe.pipeline_delete
+                cls.delete          = cls.__cahe.delete
+                cls.append_to_list  = cls.__cahe.append_to_list
+                cls.set             = cls.__cahe.set
+                cls.flushall        = cls.__cahe.flushall
+                cls.get_all_list    = cls.__cahe.get_all_list
+
         if cls.__this is None:
             cls.__this = super(LazyCache, cls).__new__(cls)
         return cls.__this
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         pass
 
-    def iazy_init(self):
-        try:
-            redis_conf = LazySettings().content.get('redis')
-        except AttributeError:
-            raise Exception('Check MONGOENGINE_REDISCACHE in settings. ')
-        try:
-            redis_conn = redis.Redis(**redis_conf)
-        except:
-            redis_conn = None
-        self.__class__.__this = RedisCache(redis_conn)
+    def get(self, *args, **kwargs):
+        LazyCache()
 
-    def get(self, cache_key):
-        self.iazy_init()
-        return self.__this.get(cache_key)
-    
-    def pipeline_get(self, cache_key_list):
-        self.iazy_init()
-        return self.__this.pipeline_get(cache_key_list)
-    
-    def pipeline_delete(self, cache_key_list):
-        self.iazy_init()
-        return self.__this.pipeline_delete(cache_key_list)
-    
-    def delete(self, cache_key):
-        self.iazy_init()
-        return self.__this.delete(cache_key)
-    
-    def append_to_list(self, list_cache_key, data):
-        self.iazy_init()
-        self.__this.append_to_list(list_cache_key, data)
-    
-    def set(self, cache_key, data, timeout=DEFAULT_TIMEOUT):
-        self.iazy_init()
-        return self.__this.set(cache_key, data, timeout=timeout)
-    
-    def flushall(self):
-        self.iazy_init()
-        return self.__this.flushall(self)
-    
-    def get_all_list(self, list_cache_key):
-        self.iazy_init()
-        return self.__this.get_all_list(list_cache_key)
+    def pipeline_get(self, *args, **kwargs):
+        LazyCache()
+
+    def pipeline_delete(self, *args, **kwargs):
+        LazyCache()
+
+    def delete(self, *args, **kwargs):
+        LazyCache()
+
+    def append_to_list(self, *args, **kwargs):
+        LazyCache()
+
+    def set(self, *args, **kwargs):
+        LazyCache()
+
+    def flushall(self, *args, **kwargs):
+        LazyCache()
+
+    def get_all_list(self, *args, **kwargs):
+        LazyCache()
 
 _internal_cache = LazyCache()
