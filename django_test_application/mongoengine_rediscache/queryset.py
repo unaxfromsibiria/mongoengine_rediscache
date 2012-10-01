@@ -72,10 +72,8 @@ class CachedQuerySet(QuerySet):
             cached_list = cache.get(cache_key)
             if cached_list is None:
             # creating cache
-                cached_list = _queryset_list()
-                if super(CachedQuerySet, self).count() > 0:
-                    for obj in self:
-                        cached_list.append(obj)
+                if self.count() > 0:
+                    cached_list = _queryset_list(self)
                     cache.set(cache_key, cached_list, timeout)
                     # add in journal
                     journal.add_find_record(cache_key, self._document._get_collection_name() , timeout)
