@@ -1,3 +1,4 @@
+VERSION = (2,0,1)
 
 def install_signals():
     from invalidation import CacheInvalidator

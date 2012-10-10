@@ -4,6 +4,14 @@ Created on 19.06.2012
 @author: unax
 '''
 
+ABSOLUTE_VERSION_LIMIT = 4294967294 # is possible theoretically
+
+posible_options = ('list',
+                   'reference',
+                   'get',
+                   'list_reference',
+                   'count')
+
 class ClassProperty(object):
     def __init__(self, getter, setter):
         self.getter = getter
@@ -23,7 +31,6 @@ class LazySettings(object):
     __this = None
     __settings = None
     __scheme = None
-    __simple_scheme = None
     __keyhashed = None
 
     def __new__(cls):
@@ -43,13 +50,18 @@ class LazySettings(object):
                 return False
 
         if conf:
+            scheme = conf.get('scheme')
             self.__class__.__settings  = conf
-            self.__class__.__scheme    = conf.get('scheme')
+            for model in scheme:
+                for_all = scheme[model].get('all')
+                if isinstance(for_all, int):
+                    for key in posible_options:
+                        scheme[model][key] = for_all
             self.__class__.__keyhashed = conf.get('keyhashed')
-            simple_scheme = {}
-            for model_location in conf.get('scheme'):
-                simple_scheme[model_location.split('.')[-1]] = conf['scheme'][model_location]
-            self.__class__.__simple_scheme = simple_scheme
+            if conf.get('used'):
+                self.__class__.__scheme = scheme
+            else:
+                self.__class__.__scheme = {}
             return True
         else:
             return False
@@ -77,10 +89,6 @@ class LazySettings(object):
     def keyhashed(self):
         return self.__keyhashed
 
-    @property
-    def simple_scheme(self):
-        return  self.__simple_scheme
-    
     @classmethod
     def timelimit(cls, model_name, operation):
         scheme = cls().simple_scheme.get(model_name)

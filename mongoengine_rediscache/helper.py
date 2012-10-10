@@ -10,6 +10,13 @@ class _queryset_list(list):
             super(_queryset_list, self).__init__()
         else:
             super(_queryset_list, self).__init__(anylist)
-    
+
     def count(self):
         return len(self)
+
+class SecondaryKey(object):
+    key = None
+    pk = None
+    def __init__(self, key, pk):
+        self.key = key
+        self.pk = pk

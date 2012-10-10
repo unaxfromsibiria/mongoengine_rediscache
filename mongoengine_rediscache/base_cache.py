@@ -41,33 +41,27 @@ class RedisCache(BaseCache):
         if data is None:
             return None
         return pickle.loads(data)
-    
+
     def pipeline_get(self, cache_key_list):
-        if isinstance(cache_key_list, list) and len(cache_key_list) > 0:
+        if cache_key_list:
             pipe = self.conn.pipeline()
             for key in cache_key_list:
                 pipe.get(key)
             data = pipe.execute()
-            if data is not None and len(data) > 0:
-                res = []
-                for d in data:
-                    try: obj = pickle.loads(d)
-                    except: obj = None
-                    if obj is not None:
-                        res.append(obj)
-                return res
+            if data:
+                return [ pickle.loads(d) for d in data if d ]
         return None
-    
+
     def pipeline_delete(self, cache_key_list):
         if isinstance(cache_key_list, list) and len(cache_key_list) > 0:
             pipe = self.conn.pipeline()
             for key in cache_key_list:
                 pipe.delete(key)
             data = pipe.execute()
-            if data is not None and len(data) > 0:
+            if data:
                 return data
         return None
-    
+
     def delete(self, cache_key):
         return self.conn.delete(cache_key)
 
@@ -79,17 +73,29 @@ class RedisCache(BaseCache):
             self.conn.setex(cache_key, pickled_data, timeout)
         else:
             self.conn.set(cache_key, pickled_data)
-    
+            
+    def set_int(self, cache_key, data, timeout=DEFAULT_TIMEOUT):
+        if not isinstance(data, int):
+            return
+        self.conn.setex(cache_key, data, timeout)
+
+    def get_int(self, cache_key):
+        try:    return int(self.conn.get(cache_key))
+        except: return None
+
+    def incr(self, name, amount=1):
+        self.conn.incr(name, amount)
+
     def flushall(self):
         if self.conn is None:
             return False
         try:    self.conn.flushdb()
         except: return False
         return True
-    
+
     def append_to_list(self, list_cache_key, data):
         self.conn.rpush(list_cache_key, data)
-    
+
     def get_all_list(self, list_cache_key):
         return  self.conn.lrange(list_cache_key, 0, -1)
 
@@ -113,6 +119,9 @@ class LazyCache(object):
                 cls.set             = cls.__cahe.set
                 cls.flushall        = cls.__cahe.flushall
                 cls.get_all_list    = cls.__cahe.get_all_list
+                cls.incr            = cls.__cahe.incr
+                cls.set_int         = cls.__cahe.set_int
+                cls.get_int         = cls.__cahe.get_int 
 
         if cls.__this is None:
             cls.__this = super(LazyCache, cls).__new__(cls)
@@ -139,10 +148,19 @@ class LazyCache(object):
     def set(self, *args, **kwargs):
         LazyCache()
 
+    def set_int(self, *args, **kwargs):
+        LazyCache()
+
+    def get_int(self, *args, **kwargs):
+        LazyCache()
+
     def flushall(self, *args, **kwargs):
         LazyCache()
 
     def get_all_list(self, *args, **kwargs):
+        LazyCache()
+    
+    def incr(self, *args, **kwargs):
         LazyCache()
 
 _internal_cache = LazyCache()

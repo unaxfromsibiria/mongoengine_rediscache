@@ -7,32 +7,43 @@ Created on 11.01.2012
 from mongoengine import Document
 from mongoengine.queryset import QuerySet
 from datetime import datetime
-import hashlib
-from config import LazySettings
+from hashlib import sha1
+from hashlib import md5
+from zlib import crc32
 from bson.dbref import DBRef
+from config import LazySettings
 # for old version: from pymongo.dbref import DBRef
+
+hash_func = {'md5'  : lambda st: md5(st).hexdigest(),
+             'sha1' : lambda st: sha1(st).hexdigest(),
+             'crc'  : lambda st: hex(crc32(st)) }
 
 from re import _pattern_type
 
 class CacheNameMixer(object):
     __line = None
+    __keyhashed = None
+
+    @property
+    def content(self):
+        return str(self)
 
     def __init__(self, query_dict=None):
+        self.__keyhashed = LazySettings().keyhashed
         self.__line = self.__parse(query_dict)
 
     def __str__(self):
-        if LazySettings().keyhashed:
-            return self.hash
-        return self.__line
+        return str(self.hash)
 
     def __unicode__(self):
-        return unicode(self.__line)
+        return unicode(self.hash)
 
     @property
     def hash(self):
-        md5 = hashlib.md5()
-        md5.update(self.__line)
-        return md5.hexdigest()
+        hash_method = hash_func.get(self.__keyhashed)
+        if hash_method:
+            return hash_method(self.__line)
+        return self.__line
 
     @property
     def line(self):

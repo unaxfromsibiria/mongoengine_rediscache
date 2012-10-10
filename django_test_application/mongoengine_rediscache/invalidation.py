@@ -3,23 +3,29 @@ Created on 13.01.2012
 
 @author: unax
 '''
-
-from journal import records
+SERVICE_TIME = 60
 from base_cache import _internal_cache as cache
+from misc import CacheNameMixer
 
-def model_change(pk, collection):
-    cache.pipeline_delete(records('list', collection))
-    cache.pipeline_delete(records('count', collection))
-    cache.pipeline_delete(records('get', collection, 'pk=%s' % str(pk)))
-    cache.delete("%s:get:journal:pk=%s" % (collection, str(pk)))
-    cache.delete("%s:list:journal:" % collection)
-    cache.delete("%s:count:journal:" % collection)
+def model_change(**params):
+    pk = params.get('pk')
+    collection = params.get('collection')
+    document = params.get('document')
+    if document:
+        pk = document.pk
+        collection = document._get_collection_name()
+    key = "%s:get:%s" % (collection, CacheNameMixer({ 'pk' : str(pk) }))
+    if document:
+        cache.set(key, document, SERVICE_TIME)
+    if params.get('delete'):
+        cache.delete(key)
+    cache.incr("version:%s" % collection, 1)
 
 class CacheInvalidator:
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        model_change(document.pk, document._get_collection_name())
-                
+        model_change(document=document)
+
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
-        model_change(document.pk, document._get_collection_name())
+        model_change(pk=document.pk, collection=document._get_collection_name(), delete=True)

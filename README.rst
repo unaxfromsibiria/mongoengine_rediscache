@@ -1,15 +1,25 @@
 About
-==========
+=====
 :Info: Redis cached tools for caching MongoEngine ORM models
 :Author: Michael
 
-mongoengine_rediscache allows you use cache on model level,
-he can to monitor the relevance of the cache when the model changes (save, update, delete).
+Now it better! Version 2 here.
+New version contains experience of uses on web-site and upgrades specially for web-projects.
+However, there are limitations. I don't recommend to use large selection.
+You can use skip() and limits() for exclude this. As often happens, the lists pagination.
+Cached selection when length more than 10000 doubtful...
+Tried to minimize removing cache, when models change or delete.
+
+What is this?
+=====
+mongoengine_rediscache allows you create cache on model level,
+instead of querying mongo, needed documents would extract from redis.
+He can to monitor the relevance of the cache when the model changes (save, update, delete).
 Designed for use with or without Django.
 
 Dependencies
-============
-- pymongo
+=====
+- `
 - mongoengine
 - python-redis
 - `blinker <http://pypi.python.org/pypi/blinker#downloads>`_
@@ -19,43 +29,35 @@ Usage
 You can create models like this (for example look at models.py of application "tests")::
 
 	from mongoengine import *
+	from mongoengine import CASCADE as REF_CASCADE
+	from mongoengine import PULL as REF_PULL
+	from datetime import datetime
 	from mongoengine_rediscache.fields import ReferenceFieldCached, ListFieldCached
 	from mongoengine_rediscache.queryset import CachedQuerySet
 	
-	class TestModelObj(Document):
-	    num  =  IntField(default=0)
-	    name =  StringField(max_length=255, required=False )
-	    text =  StringField(max_length=255, required=False )
-	    create_date = DateTimeField()
-	    
-	    meta = { 'queryset_class': CachedQuerySet }
-	
-	class TestModelList(Document):
-	    num  =  IntField(default=0)
-	    name =  StringField(max_length=255, required=False )
-	    models = ListFieldCached( ReferenceField(TestModelObj) )
-	    
-	    meta = { 'queryset_class': CachedQuerySet }
-	    
-	class TestModelRef(Document):
-	    num  =  IntField(default=0)
-	    name =  StringField(max_length=255, required=False )
-	    model = ReferenceFieldCached(TestModelObj)
-	    
-	    meta = { 'queryset_class': CachedQuerySet }
-	   
-	   
-Possible you can achieve greater efficiency if turn off cascade save for models with ReferenceField::
-
-	class TestModelRef(Document):
-	    num  =  IntField(default=0)
-	    name =  StringField(max_length=255, required=False )
-	    model = ReferenceFieldCached(TestModelObj)
-	    
+	class Model1(Document):
+	    name = StringField(max_length=32)
+	    volume = IntField()
+	    created = DateTimeField(default=datetime.now)
 	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
-	    
-	    
-Make sure the 'mongoengine_rediscache' after a 'you_application' in INSTALLED_APPS (all your applications)::
+	
+	class Model2(Document):
+	    name = StringField(max_length=32)
+	    count = IntField()
+	    created = DateTimeField(default=datetime.now)
+	    model1 = ReferenceFieldCached(Model1, reverse_delete_rule=REF_CASCADE, dbref=False)
+	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
+	
+	class Model3(Document):
+	    name = StringField(max_length=32)
+	    count = IntField()
+	    created = DateTimeField(default=datetime.now)
+	    model1 = ListFieldCached(ReferenceField(Model1, reverse_delete_rule=REF_CASCADE, dbref=False), required=True)
+	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
+
+For new mongoengine version accepted dbref=False for reference field.
+
+If you use Django make sure the 'mongoengine_rediscache' after a 'you_application' in INSTALLED_APPS (all your applications)::
 
 	INSTALLED_APPS = (
 	    'django.contrib.auth',
@@ -68,6 +70,7 @@ Make sure the 'mongoengine_rediscache' after a 'you_application' in INSTALLED_AP
 	    'django.contrib.admin',
 	    'packeris',
 	    'tests',
+	    'webapplication1',
 	    'mongoengine_rediscache',
 	    'cronis',
 	)
@@ -79,19 +82,18 @@ And more, you must create option in settings::
 
 	MONGOENGINE_REDISCACHE = {
 	    'scheme' : {
-                	'tests.models.TestModelObj'  : { 'list' : 120, 'reference' : 600, 'get' : 600 },
-                	'tests.models.TestModelList' : { 'all' : 600 },
-                	'tests.models.TestModelRef'  : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
-                	'tests.models.TestModelDict' : { 'list' : 120, 'reference' : 600, 'get' : 120, 'list_reference' : 600 },
+	                'webapplication1.models.Model1' : { 'all' : 600 },
+	                'webapplication1.models.Model2' : { 'count' : 300, 'list' : 300, 'get' : 600 },
+	                'webapplication1.models.Model3' : { 'all' : 600 },
 	                },
 	    'redis' : {
 	        'host': 'localhost',
 	        'port': 6379,
-	        'db': 1, 
-	        'socket_timeout': 3,
+	        'db'  : 2,
+	        'socket_timeout': 5,
 	    },
-	    'used' : True,
-	    'keyhashed' : True,
+	    'used'      : True,
+	    'keyhashed' : 'crc',
 	}
 
 - `'count' - use cache for count() method of CachedQuerySet`
@@ -99,6 +101,7 @@ And more, you must create option in settings::
 - `'reference' - use cache in ReferenceFieldCached`
 - `'get' - use cache in CachedQuerySet for all get request`
 - `'list_reference' - use cache for ListFieldCached( ReferenceField(Document) )`
+Example: list of documents class Model2 will be stored in cache for an 600 seconds.
 
 Posible to use without Django, you'll have such code::
 
@@ -124,14 +127,13 @@ Posible to use without Django, you'll have such code::
 	        'socket_timeout': 5,
 	    },
 	    'used'      : True,
-	    'keyhashed' : True,
+	    'keyhashed' : 'md5',
 	}
 	
 	class Model1(Document):
 	    name = StringField(max_length=32)
 	    volume = IntField()
 	    created = DateTimeField(default=datetime.now)
-	    
 	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
 	
 	class Model2(Document):
@@ -139,7 +141,6 @@ Posible to use without Django, you'll have such code::
 	    count = IntField()
 	    created = DateTimeField(default=datetime.now)
 	    model1 = ReferenceField(Model1, reverse_delete_rule=REF_CASCADE, dbref=False)
-	    
 	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
 	
 	class Model3(Document):
@@ -147,35 +148,158 @@ Posible to use without Django, you'll have such code::
 	    count = IntField()
 	    created = DateTimeField(default=datetime.now)
 	    model1 = ListField(ReferenceField(Model1, reverse_delete_rule=REF_CASCADE, dbref=False), required=True)
-	    
 	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
 	
 	install_signals()
 
 I think this all simple..
+Easily adapted for use with Flask or any more.
 
-MONGOENGINE_REDISCACHE contain option 'keyhashed' needed for hashed cahce keys.
+Option 'keyhashed' needed for hashing key in keyspace of redis.
+It is known that the optimal length of a redis keys (30-80 bytes) and key hashing usefull for it.
+Such values are available: 'md5', 'crc', 'sha1', 'off'
+If your mongo collection is not huge, you can use 'crc' (crc32), it fastest.
 
-If 'keyhashed' is False then cache name generator will be create keys like this::
-  1) "test_model_obj:list:_types=TestModelObj|text=regex(ef)|num=$lt=500000|create_date=$gt=1986-11-2207:15:00|((num,1))"
-  2) "test_model_obj:list:text__contains=aa|((num,1))"
-  3) "test_model_obj:list:_types=TestModelObj|text=regex(fe)|num=$lt=500000|((num,1))"
-  4) "test_model_obj:list:name__contains=ee|((name,-1))"
-  5) "test_model_obj:list:_types=TestModelObj|create_date=$gt=1986-11-2207:15:00|name=regex(bb)|((name,-1))"
+If 'keyhashed' is 'off' (usefull for debug) then cache name generator will be create keys like this::
+  1) "model1:get:pk=507431d618881a29d5489fa6"
+  2) "model1:get:pk=507431d618881a29d5489fa7"
+  3) "model1:get:pk=507431d618881a29d5489fa8"
+  4) "model1:list:_types=Model1|name=regex(64)|created=$lt=2012-10-02 04:23:35|limit=20"
+  5) "model1:list:volume=$gt=4587|_types=Model1|created=$lt=2012-10-01 18:39:54|limit=20"
+  6) "model1:count:_types=Model1|name=regex(64)|created=$lt=2012-10-02 15:30:11|limit=20"
+  7) "model1:count:_types=Model1|name=regex(27)|created=$lt=2012-10-02 15:30:11"
+  8) "model1:count:volume=$gt=4932|_types=Model1|name=regex(64)|created=$lt=2012-10-01 18:39:54|limit=20"
+  9) "version:model1:_types=Model1|name=regex(64)|created=$lt=2012-10-02 15:30:11|limit=20"
 
-If 'keyhashed' is True then keys will be hide in hash::
-  1) "test_model_obj:list:9cc7bcf436afe1db24bb4aaae89f429f"
-  2) "test_model_obj:list:c96fc2fe93b665c8f44dbf1ae4b1dacf"
-  3) "test_model_obj:list:7828697e5b6c1995e3f5d4e336acb30d"
-  4) "test_model_obj:list:b212d48e0a087b249b9701dee2e056c2"
-  5) "test_model_obj:list:8eae9ba432e723cdc43f3399e50ec41f"
+If 'keyhashed' is 'md5' then keys will be hide in hash::
+  1) "model1:list:ab202a9082abbf3892f31dccaf00dd86"
+  2) "model1:list:7ba456321f5ab1ac1e72291851850222"
+  3) "model1:get:5ece9d488ba0d5fd728483641ae98133"
+  4) "model1:get:f4fbb8f2d1ba5182cc69ca5483307d8c"
+  5) "model1:count:bfa1781b4a91ad188b5e2979377f90e5"
+  6) "model1:count:d18324448741ed6a2fcb4918cba9899d"
+  7) "model1:count:faea89e7da24e8b7e136b0806df937a9"
+  8) "version:model1:c25fe3e908141cf2460c42b47cbd2b58"
+  9) "version:model1:48081af7428a47804df03a4b5e8a2f16"
 
-This will be useful if you have a lot of different samples of one collection.
+If 'keyhashed' is 'crc' then keys will be hide in crc32::
+  1) "model1:list:0x2500dddd"
+  2) "model1:list:-0x1a2b98c8"
+  3) "model1:list:0x701c7416"
+  4) "version:model1"
+  5) "version:model1:-0x1a9e8ea6"
+  6) "version:model1:0x265a4738"
+  7) "model1:get:0x22ef9e6d"
+  8) "model1:get:-0x445aa237"
+  9) "model1:get:-0x18b616c0"
 
-and finally
+This will be usefull if you have a lot of different samples of one collection.
+
+Simple tests
 =====
-Hopefully this will be useful :)
+OS and soft::
 
-Thanks for the idea of Alexander Schepanovski (author of https://github.com/Suor/django-cacheops)
+	os: Debian GNU/Linux 3.2.0-3-amd64 x86_64
+	cpu: Intel(R) Pentium(R) CPU P6200  @ 2.13GHz
+	ram: 5657mb
+	redis-server 2.4.14-1
+	mongodb 2.0.6-1
+	python 2.7.3rc2
+	pymongo 2.3
+	mongoengine 0.7.4
+	redis-py 2.4.13
+
+Here primitive test the speed of documents get::
+
+	=== simple get ===
+	---- cache: on ----
+	Get test (operations count: 50 000):
+	time: 10.1263229847
+	time: 9.63664793968
+	time: 9.62323498726
+	time: 9.86023807526
+	
+	---- cache: off ----
+	Get test (operations count: 50 000):
+	time: 52.4118318558
+	time: 52.0931260586
+	time: 54.8670527935
+	time: 54.3389751911
+	
+	=== getting lists and his length ===
+	---- cache: on ----
+	Count&List test (operations count: 1000):
+	time: 2.64498996735
+	object count: 20000
+	total lists size 1.220 mb
+	time: 2.51725912094
+	object count: 20000
+	total lists size 1.220 mb
+	
+	Count&List test (operations count: 10 000):
+	time: 27.3708209991
+	object count: 200000
+	total lists size 12.20 mb
+	time: 27.2179660797
+	object count: 200000
+	total lists size 12.20 mb
+	
+	---- cache: off ----
+	Count&List test (operations count: 1000):
+	time: 50.7567090988
+	object count: 18361
+	total lists size 1.120 mb
+	time: 50.4682869911
+	object count: 18459
+	total lists size 1.126 mb
+	
+	Count&List test (operations count: 10 000):
+	time: 426.830417871
+	object count: 200000
+	total lists size 12.20 mb
+	time: 426.300350904
+	object count: 200000
+	total lists size 12.20 mb
+	
+	=== getting reference document ===
+	---- cache: on ----
+	Reference get test (operations count: 10000):
+	time: 4.35703992844
+	time: 4.46496796608
+	time: 3.83190703392
+	time: 4.36581397057
+	
+	---- cache: off ----
+	Reference get test (operations count: 10000):
+	time: 19.0283870697
+	time: 17.5101211071
+	time: 18.8498110771
+	time: 18.0227570534
+	
+	=== getting reference list ===
+	---- cache: on ----
+	Reference list test (operations count: 10000):
+	time: 13.4849770069
+	total lists size 5.825 mb
+	time: 14.1508440971
+	total lists size 5.801 mb
+	time: 14.4012730122
+	total lists size 5.859 mb
+	Reference list test (operations count: 10000):
+	time: 12.7077980042
+	total lists size 5.804 mb
+	
+	---- cache: off ----
+	Reference list test (operations count: 10000):
+	time: 46.5085849762
+	total lists size 5.823 mb
+	time: 48.3886919022
+	total lists size 5.807 mb
+	time: 19.1344659328
+	total lists size 1.220 mb
+	time: 45.919934988
+	total lists size 5.760 mb
+
+profit obvious..
 
 Sincerely, Michael Vorotyntsev.
