@@ -4,22 +4,30 @@ About
 :Author: Michael
 
 Now it better! Version 2 here.
+
 New version contains experience of uses on web-site and upgrades specially for web-projects.
+
 However, there are limitations. I don't recommend to use large selection.
+
 You can use skip() and limits() for exclude this. As often happens, the lists pagination.
+
 Cached selection when length more than 10000 doubtful...
+
 Tried to minimize removing cache, when models change or delete.
 
 What is this?
 =====
 mongoengine_rediscache allows you create cache on model level,
+
 instead of querying mongo, needed documents would extract from redis.
+
 He can to monitor the relevance of the cache when the model changes (save, update, delete).
+
 Designed for use with or without Django.
 
 Dependencies
 =====
-- `
+- pymongo
 - mongoengine
 - python-redis
 - `blinker <http://pypi.python.org/pypi/blinker#downloads>`_
@@ -156,8 +164,11 @@ I think this all simple..
 Easily adapted for use with Flask or any more.
 
 Option 'keyhashed' needed for hashing key in keyspace of redis.
+
 It is known that the optimal length of a redis keys (30-80 bytes) and key hashing usefull for it.
+
 Such values are available: 'md5', 'crc', 'sha1', 'off'
+
 If your mongo collection is not huge, you can use 'crc' (crc32), it fastest.
 
 If 'keyhashed' is 'off' (usefull for debug) then cache name generator will be create keys like this::
@@ -300,6 +311,6 @@ Here primitive test the speed of documents get::
 	time: 45.919934988
 	total lists size 5.760 mb
 
-profit obvious..
+profit there..
 
 Sincerely, Michael Vorotyntsev.
