@@ -85,9 +85,11 @@ class CachedQuerySet(QuerySet):
             document = cache.get(cache_key)
             if isinstance(document, SecondaryKey):
                 original_pk = document.pk
+                v = document.version
                 document = cache.get(document.key)
-                if not isinstance(document, Document):
+                if not isinstance(document, Document) or v<self.cache_version:
                     document = self.get(pk=original_pk)
+
             elif document is None:
                 self.__call__(*q_objs, **query)
                 count = super(CachedQuerySet, self).count()
@@ -101,7 +103,9 @@ class CachedQuerySet(QuerySet):
                 original_cache_key = "%s:get:%s" % (self._document._get_collection_name(),
                                                     CacheNameMixer({ 'pk' : str(document.pk) }))
                 if original_cache_key != cache_key:
-                    cache.set(cache_key, SecondaryKey(original_cache_key, str(document.pk)), timeout)
+                    cache.set(cache_key,
+                              SecondaryKey(original_cache_key, str(document.pk), self.cache_version),
+                              timeout)
 
                 cache.set(original_cache_key, document, timeout)
         else:

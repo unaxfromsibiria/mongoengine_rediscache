@@ -63,7 +63,7 @@ You can create models like this (for example look at models.py of application "t
 	    model1 = ListFieldCached(ReferenceField(Model1, reverse_delete_rule=REF_CASCADE, dbref=False), required=True)
 	    meta = { 'queryset_class': CachedQuerySet, 'cascade' : False }
 
-For new mongoengine version accepted dbref=False for reference field.
+For new mongoengine version accepted dbref=True for reference field.
 
 If you use Django make sure the 'mongoengine_rediscache' after a 'you_application' in INSTALLED_APPS (all your applications)::
 
@@ -204,7 +204,19 @@ If 'keyhashed' is 'crc' then keys will be hide in crc32::
   8) "model1:get:-0x445aa237"
   9) "model1:get:-0x18b616c0"
 
-This will be usefull if you have a lot of different samples of one collection.
+How to simple flush cahce? It is not necessary run FLUSHALL in redis-cli.
+
+You only can change version of needed collection. For flush cache of Model1 you can::
+
+	redis 127.0.0.1:6379> SELECT 1
+	OK
+	redis 127.0.0.1:6379[1]> INCRBY "version:model1" 1
+	(integer) 12
+
+If you want flush cache for all collection try this::
+
+	$redis-cli -n 1 keys '*version:*' | grep '^version:[a-z0-9]\{1,32\}$' | xargs redis-cli -n 1 incr
+
 
 Simple tests
 =====

@@ -7,6 +7,7 @@ from mongoengine import (
     ReferenceField,
     ListField,
     Document)
+from mongoengine.queryset import QuerySet
 from helper import _queryset_list
 from base_cache import _internal_cache as cache
 from bson.dbref import DBRef
@@ -36,8 +37,12 @@ class ListFieldCached(ListField):
                 return super(ListFieldCached, self).__get__(instance, owner)
             
             DBRef_list = instance._data.get(self.name)
-            if isinstance(DBRef_list, _queryset_list):
-                return DBRef_list
+
+            if isinstance(DBRef_list, (list, tuple, QuerySet)):
+                for d in DBRef_list:
+                    if isinstance(d, Document):
+                        return DBRef_list
+
             if DBRef_list and len(DBRef_list) > 0:
                 keys = []
     
@@ -45,7 +50,7 @@ class ListFieldCached(ListField):
                     if isinstance(dbref_obj, DBRef):
                         keys.append('%s:get:%s' % (dbref_obj.collection,
                                                    CacheNameMixer({ 'pk' : str(dbref_obj.id) }) ) )
-                    else:
+                    elif isinstance(dbref_obj, (str, unicode)):
                         keys.append('%s:get:%s' % (self.document_type._get_collection_name(),
                                                    CacheNameMixer({ 'pk' : str(dbref_obj)}) ) )
     
@@ -78,17 +83,17 @@ class ReferenceFieldCached(ReferenceField):
                     if isinstance(value, DBRef):
                         core = (value.collection,
                                 CacheNameMixer({ 'pk' : str(value.id) }) )
-                    else:
+                    elif isinstance(value, (str, unicode)):
                         core = (self.document_type._get_collection_name(),
                                 CacheNameMixer({ 'pk' : str(value) }) )
-
-                    cache_key = '%s:get:%s' % core
-                    obj = cache.get(cache_key)
-
-                    if obj is None:
-                        obj = super(ReferenceFieldCached, self).__get__(instance, owner)
-                        if obj:
-                            cache.set(cache_key, obj, timeout)
-                    instance._data[self.name] = obj
+                    if core:
+                        cache_key = '%s:get:%s' % core
+                        obj = cache.get(cache_key)
+    
+                        if obj is None:
+                            obj = super(ReferenceFieldCached, self).__get__(instance, owner)
+                            if obj:
+                                cache.set(cache_key, obj, timeout)
+                        instance._data[self.name] = obj
 
         return super(ReferenceFieldCached, self).__get__(instance, owner)

@@ -17,6 +17,8 @@ class _queryset_list(list):
 class SecondaryKey(object):
     key = None
     pk = None
-    def __init__(self, key, pk):
+    version = None
+    def __init__(self, key, pk, version):
         self.key = key
         self.pk = pk
+        self.version = version
