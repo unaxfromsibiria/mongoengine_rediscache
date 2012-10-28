@@ -84,13 +84,12 @@ class CachedQuerySet(QuerySet):
                                        core_cache_name)
             document = cache.get(cache_key)
             if isinstance(document, SecondaryKey):
-                original_pk = document.pk
                 v = document.version
                 document = cache.get(document.key)
-                if not isinstance(document, Document) or v<self.cache_version:
-                    document = self.get(pk=original_pk)
+                if not isinstance(document, Document) or v < self.cache_version:
+                    document = None
 
-            elif document is None:
+            if document is None:
                 self.__call__(*q_objs, **query)
                 count = super(CachedQuerySet, self).count()
                 if count == 1:

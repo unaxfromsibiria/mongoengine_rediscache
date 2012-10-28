@@ -56,7 +56,8 @@ class ListFieldCached(ListField):
     
                 models = cache.pipeline_get(keys)
                 del keys
-                if models is None or len(models) != len(DBRef_list) or changed:
+                # if models is None or len(models) != len(DBRef_list) or changed: - this right, but
+                if models is None or len(models)<1 or changed: # <- it reduces operations count
                     models = super(ListFieldCached, self).__get__(instance, owner)
     
                     if models and len(models) > 0:

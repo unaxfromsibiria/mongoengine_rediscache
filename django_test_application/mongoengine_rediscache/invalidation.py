@@ -15,8 +15,7 @@ def model_change(**params):
         pk = document.pk
         collection = document._get_collection_name()
     key = "%s:get:%s" % (collection, CacheNameMixer({ 'pk' : str(pk) }))
-    if document:
-        cache.set(key, document, SERVICE_TIME)
+
     if params.get('delete'):
         cache.delete(key)
     cache.incr("version:%s" % collection, 1)
@@ -24,7 +23,7 @@ def model_change(**params):
 class CacheInvalidator:
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        model_change(document=document)
+        model_change(pk=document.pk, collection=document._get_collection_name(), delete=True)
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

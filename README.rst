@@ -284,8 +284,7 @@ Here primitive test the speed of documents get::
 	object count: 200000
 	total lists size 12.20 mb
 	
-	=== getting reference document ===
-	---- cache: on ----
+	
 	Reference get test (operations count: 10000):
 	time: 4.35703992844
 	time: 4.46496796608
