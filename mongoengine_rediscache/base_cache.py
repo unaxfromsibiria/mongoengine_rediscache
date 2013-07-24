@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-from config import LazySettings
+
 import cPickle as pickle
+import logging
+import redis
+from .config import LazySettings, DEFAULT_LOGGER
 from functools import wraps
 from hashlib import md5 as md5_constructor
-import redis
 
-DEFAULT_TIMEOUT = 600
+DEFAULT_TIMEOUT = 60
+
 
 class BaseCache(object):
     def cached(self, extra=None, timeout=None):
@@ -13,24 +16,25 @@ class BaseCache(object):
             @wraps(func)
             def wrapper(*args, **kwargs):
                 md5 = md5_constructor()
-                md5.update('%s.%s' % (func.__module__, func.__name__))
-                if extra is not None:
+                md5.update('{0}.{1}'.format(func.__module__, func.__name__))
+                if extra:
                     md5.update(str(extra))
                 if args:
                     md5.update(repr(args))
                 if kwargs:
                     md5.update(repr(sorted(kwargs.items())))
 
-                cache_key = 'c:%s' % md5.hexdigest()
+                cache_key = 'c:{0}'.format(md5.hexdigest())
 
                 try:
                     result = self.get(cache_key)
-                except:
+                except (ValueError, TypeError):
                     result = func(*args, **kwargs)
                     self.set(cache_key, result, timeout)
                 return result
             return wrapper
         return decorator
+
 
 class RedisCache(BaseCache):
     def __init__(self, conn):
@@ -38,9 +42,8 @@ class RedisCache(BaseCache):
 
     def get(self, cache_key):
         data = self.conn.get(cache_key)
-        if data is None:
-            return None
-        return pickle.loads(data)
+        if data:
+            pickle.loads(data)
 
     def pipeline_get(self, cache_key_list):
         if cache_key_list:
@@ -49,7 +52,7 @@ class RedisCache(BaseCache):
                 pipe.get(key)
             data = pipe.execute()
             if data:
-                return [ pickle.loads(d) for d in data if d ]
+                return [pickle.loads(d) for d in data if d]
         return None
 
     def pipeline_delete(self, cache_key_list):
@@ -66,32 +69,33 @@ class RedisCache(BaseCache):
         return self.conn.delete(cache_key)
 
     def set(self, cache_key, data, timeout=DEFAULT_TIMEOUT):
-        if self.conn is None:
+        if not self.conn:
             return
+        assert isinstance(timeout, int)
         pickled_data = pickle.dumps(data)
-        if timeout is not None:
+        if timeout > 0:
             self.conn.setex(cache_key, pickled_data, timeout)
         else:
             self.conn.set(cache_key, pickled_data)
-            
+
     def set_int(self, cache_key, data, timeout=DEFAULT_TIMEOUT):
-        if not isinstance(data, int):
-            return
+        assert isinstance(timeout, int)
         self.conn.setex(cache_key, data, timeout)
 
     def get_int(self, cache_key):
-        try:    return int(self.conn.get(cache_key))
-        except: return None
+        try:
+            return int(self.conn.get(cache_key))
+        except (AttributeError, TypeError, ValueError):
+            return
 
     def incr(self, name, amount=1):
         self.conn.incr(name, amount)
 
     def flushall(self):
-        if self.conn is None:
-            return False
-        try:    self.conn.flushdb()
-        except: return False
-        return True
+        if self.conn:
+            self.conn.flushdb()
+            return True
+        return False
 
     def append_to_list(self, list_cache_key, data):
         self.conn.rpush(list_cache_key, data)
@@ -99,68 +103,31 @@ class RedisCache(BaseCache):
     def get_all_list(self, list_cache_key):
         return  self.conn.lrange(list_cache_key, 0, -1)
 
+
 class LazyCache(object):
     __this = None
-    __cahe = None
+    __cache = None
+
+    def setup(self):
+        if not isinstance(self.__cache, RedisCache):
+            conf = LazySettings().content.get('redis')
+            conn = redis.Redis(**conf)
+            self.__cache = RedisCache(conn)
+            loger = logging.getLogger(DEFAULT_LOGGER)
+            loger.debug('{0}: Cache connection is initialized'\
+                .format(self.__class__.__name__))
 
     def __new__(cls):
-        if not isinstance(cls.__cahe, RedisCache):
-            # try connect
-            try:     redis_conn = redis.Redis(**(LazySettings().content.get('redis')) )
-            except:  redis_conn = None
-            if redis_conn:
-                # replace functional
-                cls.__cahe          = RedisCache(redis_conn)
-                cls.get             = cls.__cahe.get
-                cls.pipeline_get    = cls.__cahe.pipeline_get
-                cls.pipeline_delete = cls.__cahe.pipeline_delete
-                cls.delete          = cls.__cahe.delete
-                cls.append_to_list  = cls.__cahe.append_to_list
-                cls.set             = cls.__cahe.set
-                cls.flushall        = cls.__cahe.flushall
-                cls.get_all_list    = cls.__cahe.get_all_list
-                cls.incr            = cls.__cahe.incr
-                cls.set_int         = cls.__cahe.set_int
-                cls.get_int         = cls.__cahe.get_int 
-
         if cls.__this is None:
             cls.__this = super(LazyCache, cls).__new__(cls)
         return cls.__this
 
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def get(self, *args, **kwargs):
-        LazyCache()
-
-    def pipeline_get(self, *args, **kwargs):
-        LazyCache()
-
-    def pipeline_delete(self, *args, **kwargs):
-        LazyCache()
-
-    def delete(self, *args, **kwargs):
-        LazyCache()
-
-    def append_to_list(self, *args, **kwargs):
-        LazyCache()
-
-    def set(self, *args, **kwargs):
-        LazyCache()
-
-    def set_int(self, *args, **kwargs):
-        LazyCache()
-
-    def get_int(self, *args, **kwargs):
-        LazyCache()
-
-    def flushall(self, *args, **kwargs):
-        LazyCache()
-
-    def get_all_list(self, *args, **kwargs):
-        LazyCache()
-    
-    def incr(self, *args, **kwargs):
-        LazyCache()
+    def __getattr__(self, attr):
+        try:
+            value = self.__dict__[attr]
+        except KeyError:
+            self.setup()
+            value = getattr(self.__cache, attr, None)
+        return value
 
 _internal_cache = LazyCache()

@@ -4,13 +4,18 @@ Created on 19.06.2012
 @author: unax
 '''
 
-ABSOLUTE_VERSION_LIMIT = 4294967294 # is possible theoretically
+DEFAULT_LOGGER = 'mongoengine_rediscache'
 
-posible_options = ('list',
-                   'reference',
-                   'get',
-                   'list_reference',
-                   'count')
+# is possible theoretically
+ABSOLUTE_VERSION_LIMIT = 2 ** 32
+
+posible_options = (
+   'list',
+   'reference',
+   'get',
+   'list_reference',
+   'count')
+
 
 class ClassProperty(object):
     def __init__(self, getter, setter):
@@ -23,8 +28,10 @@ class ClassProperty(object):
     def __set__(self, cls, value):
         getattr(cls, self.setter)(value)
 
+
 class MetaSettings(type):
     options = ClassProperty('get_options', 'set_options')
+
 
 class LazySettings(object):
     __metaclass__ = MetaSettings
@@ -37,21 +44,22 @@ class LazySettings(object):
         if cls.__this is None:
             cls.__this = super(LazySettings, cls).__new__(cls)
         return cls.__this
-    
+
     def create(self, **options):
         conf = None
-        if len(options) > 1 and 'redis' in options:
+        if options and 'redis' in options:
             conf = options
         else:
             try:
+                # used with django
                 from django.conf import settings
                 conf = getattr(settings, 'MONGOENGINE_REDISCACHE', None)
-            except:
+            except ImportError:
                 return False
 
-        if conf:
+        if dict:
             scheme = conf.get('scheme')
-            self.__class__.__settings  = conf
+            self.__class__.__settings = conf
             for model in scheme:
                 for_all = scheme[model].get('all')
                 if isinstance(for_all, int):
@@ -78,7 +86,8 @@ class LazySettings(object):
     @property
     def content(self):
         if self.__settings is None and not self.create():
-            raise Exception('Mongoengine rediscache error! No settings.')
+            raise NotImplementedError(
+                'Empty settings! Check settings.MONGOENGINE_REDISCACHE')
         return self.__settings
 
     @property
