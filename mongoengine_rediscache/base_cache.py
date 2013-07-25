@@ -43,7 +43,7 @@ class RedisCache(BaseCache):
     def get(self, cache_key):
         data = self.conn.get(cache_key)
         if data:
-            pickle.loads(data)
+            return pickle.loads(data)
 
     def pipeline_get(self, cache_key_list):
         if cache_key_list:

@@ -34,8 +34,8 @@ class CachedQuerySet(QuerySet):
     def cache_scheme(self):
         if self.cache_scheme_dict is None:
             self.cache_scheme_dict = dict()
-            d = LazySettings().scheme.get('%s.%s' % (self._document.__module__,
-                                                     self._document.__name__))
+            d = LazySettings().scheme.get('{0}.{1}'.format(
+                self._document.__module__, self._document.__name__))
             if d:
                 self.cache_scheme_dict.update(**d)
         return self.cache_scheme_dict
@@ -61,7 +61,7 @@ class CachedQuerySet(QuerySet):
                 self.core_cache_name)
             cache_key = "{0}:count:{1}".format(*core)
             version_key = "version:{0}:{1}".format(*core)
-            version = cache.get_int()
+            version = cache.get_int(version_key)
             if version:
                 v = self.cache_version
                 n = cache.get_int(cache_key)
@@ -133,7 +133,10 @@ class CachedQuerySet(QuerySet):
 
             if isinstance(cached_list, list) and version == v:
                 del cache_key
-                return _queryset_list(cache.pipeline_get(cached_list))
+                self._result_cache = _queryset_list(
+                    cache.pipeline_get(cached_list))
+                del cached_list
+                return self
             else:
                 # creating cache
                 if self.count() > 0:
